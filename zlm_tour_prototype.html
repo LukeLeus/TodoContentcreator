@@ -1,0 +1,605 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Georgia', serif; }
+  .phone-wrap { display: flex; justify-content: center; padding: 12px 0; }
+  .phone {
+    width: 360px; min-height: 720px; background: #fff;
+    border: 2px solid #333; border-radius: 28px;
+    overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+    box-shadow: 4px 4px 0 #aaa;
+  }
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+  .top-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px 18px 8px; }
+  .page-title { font-family: 'Arial', sans-serif; font-size: 26px; font-weight: 700; color: #111; line-height: 1.1; }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #333; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; border: none;
+  }
+  .icon-btn svg { width: 20px; height: 20px; fill: #fff; }
+  .content { flex: 1; overflow-y: auto; padding: 8px 18px; }
+  .bottom-nav {
+    display: flex; background: #222; padding: 8px 0 12px;
+    border-top: 1px solid #444;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 2px; cursor: pointer; border: none; background: transparent;
+    padding: 4px 0;
+  }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.active svg { fill: #fff; }
+  .nav-btn:not(.active) svg { fill: #888; }
+
+  .task-card {
+    background: #eee; border: 1px solid #ccc;
+    border-radius: 6px; margin-bottom: 10px; overflow: hidden;
+  }
+  .task-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; cursor: pointer; gap: 6px;
+  }
+  .task-title-row { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .check-circle {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #666; flex-shrink: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .check-circle.done { background: #4a4; border-color: #4a4; }
+  .check-circle.done::after { content: '✓'; color: #fff; font-size: 13px; font-weight: bold; }
+  .task-name { font-weight: 700; font-size: 15px; color: #111; }
+  .task-name.done { text-decoration: line-through; color: #888; }
+  .deadline-badge { font-size: 11px; color: #c00; font-weight: 600; white-space: nowrap; }
+  .deadline-badge.done-badge { color: #4a4; }
+  .edit-icon { cursor: pointer; color: #777; font-size: 14px; }
+  .subtask-list { padding: 4px 10px 10px 10px; border-top: 1px solid #ccc; }
+  .subtask-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; cursor: pointer; }
+  .sub-circle {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid #888; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sub-circle.done { background: #4a4; border-color: #4a4; }
+  .sub-circle.done::after { content: '✓'; color: #fff; font-size: 10px; font-weight: bold; }
+  .subtask-text { font-size: 13px; color: #333; line-height: 1.3; }
+  .subtask-text.done { text-decoration: line-through; color: #888; }
+  .see-more { text-align: right; font-size: 12px; color: #0055cc; text-decoration: underline; cursor: pointer; margin-top: 2px; }
+
+  .partner-card { background: #e8e8e8; border: 1px solid #bbb; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+  .partner-header { background: #d5d5d5; padding: 8px 10px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #bbb; }
+  .partner-body { padding: 8px 10px; }
+  .partner-field { font-size: 13px; color: #444; margin-bottom: 6px; }
+  .partner-field span { color: #888; font-size: 12px; display: block; }
+
+  .briefing-section { margin-bottom: 16px; }
+  .brief-label { font-size: 13px; color: #666; font-weight: 600; margin-bottom: 4px; }
+  .brief-content { font-size: 13px; color: #333; line-height: 1.5; }
+  .brief-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .must-list li, .nice-list li { font-size: 13px; color: #444; margin-bottom: 4px; list-style: none; padding-left: 10px; }
+  .must-list li::before { content: '– '; }
+  .readonly-badge { font-size: 11px; color: #888; background: #eee; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px; display: inline-block; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; padding: 8px 10px; font-size: 13px;
+    border: 1.5px solid #bbb; border-radius: 6px; background: #f5f5f5;
+    font-family: Arial, sans-serif;
+  }
+  .form-input:focus { outline: none; border-color: #666; }
+  .form-textarea { width: 100%; height: 90px; resize: none; padding: 8px 10px; font-size: 13px; border: 1.5px solid #bbb; border-radius: 6px; background: #f5f5f5; font-family: Arial, sans-serif; }
+  .tags-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .radio-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+  .radio-circle {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid #888; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .radio-circle.selected { background: #333; border-color: #333; }
+  .radio-circle.selected::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .radio-label { font-size: 13px; color: #333; }
+
+  .btn-primary {
+    width: 100%; padding: 12px; background: #ddd; border: 1.5px solid #999;
+    border-radius: 8px; font-size: 15px; font-weight: 600; color: #222;
+    cursor: pointer; margin-top: 8px; font-family: Arial, sans-serif;
+  }
+  .btn-primary:hover { background: #ccc; }
+  .btn-primary.dark { background: #333; color: #fff; border-color: #333; }
+
+  .step-indicator { text-align: center; font-size: 12px; color: #888; margin-bottom: 10px; }
+
+  .login-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 32px 24px; }
+  .login-title { font-size: 36px; font-weight: 700; text-align: center; margin-bottom: 32px; font-family: Arial, sans-serif; }
+
+  .detail-info { background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
+  .detail-info p { font-size: 13px; color: #444; margin-bottom: 3px; }
+  .detail-sub-edit { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #ddd; }
+  .pencil-icon { font-size: 14px; cursor: pointer; color: #666; flex-shrink: 0; margin-top: 1px; }
+
+  .progress-bar-wrap { background: #e0e0e0; border-radius: 4px; height: 8px; margin-bottom: 4px; }
+  .progress-bar { background: #555; border-radius: 4px; height: 8px; transition: width 0.4s; }
+  .progress-text { font-size: 11px; color: #888; margin-bottom: 8px; }
+
+  .profile-btn { width: 40px; height: 40px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+</style>
+
+<div class="phone-wrap">
+<div class="phone">
+
+  <div class="screen active" id="s-login">
+    <div class="login-wrap">
+      <div class="login-title">Login</div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="login-user" placeholder="bijv. luke" value="luke" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="••••••" value="1234" />
+      </div>
+      <button class="btn-primary dark" style="margin-top:24px" onclick="doLogin()">Next</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-todo">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-title">To do</div>
+      </div>
+      <button class="profile-btn" onclick="goto('s-login')">
+        <svg viewBox="0 0 24 24" fill="white"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+      </button>
+    </div>
+
+    <div class="content" id="todo-content">
+    </div>
+    <div class="bottom-nav" id="nav-todo">
+      <button class="nav-btn active" onclick="goto('s-todo')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </button>
+      <button class="nav-btn" onclick="goto('s-tasks-list')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+      </button>
+      <button class="nav-btn" onclick="goto('s-partners')">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </button>
+      <button class="nav-btn" onclick="goto('s-add-task-1')">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-tasks-list">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-title">To do</div>
+      </div>
+      <button class="profile-btn" onclick="goto('s-login')">
+        <svg viewBox="0 0 24 24" fill="white"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+      </button>
+    </div>
+    <div class="content" id="tasks-list-content"></div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goto('s-todo')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </button>
+      <button class="nav-btn active" onclick="goto('s-tasks-list')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+      </button>
+      <button class="nav-btn" onclick="goto('s-partners')">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </button>
+      <button class="nav-btn" onclick="goto('s-add-task-1')">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-task-detail">
+    <div class="top-bar" style="align-items:center">
+      <div>
+        <div style="font-size:14px;color:#888;margin-bottom:2px">Taak</div>
+        <div class="page-title" id="detail-title">Persbericht</div>
+        <div class="deadline-badge" style="font-size:13px;margin-top:4px" id="detail-deadline">Deadline: Urgent</div>
+      </div>
+      <span class="edit-icon" style="font-size:20px" onclick="goto('s-task-edit')">✏️</span>
+    </div>
+    <div class="content">
+      <div class="detail-info" id="detail-info"></div>
+      <div id="detail-subtasks"></div>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goto('s-todo')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+      <button class="nav-btn active"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-partners')"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-add-task-1')"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-task-edit">
+    <div class="top-bar">
+      <div>
+        <div style="font-size:14px;color:#888">Taak aanpassen</div>
+        <div class="page-title" id="edit-title-head">Persbericht</div>
+      </div>
+      <button class="icon-btn" onclick="goto('s-task-detail')">
+        <svg viewBox="0 0 24 24"><path d="M19 11H7.83l4.88-4.88c.39-.39.39-1.03 0-1.42-.39-.39-1.02-.39-1.41 0l-6.59 6.59c-.39.39-.39 1.02 0 1.41l6.59 6.59c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L7.83 13H19c.55 0 1-.45 1-1s-.45-1-1-1z"/></svg>
+      </button>
+    </div>
+    <div class="content" id="edit-subtasks-content"></div>
+    <div style="padding:12px 18px">
+      <button class="btn-primary dark" onclick="saveEdit()">Opslaan</button>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goto('s-todo')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+      <button class="nav-btn active"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-partners')"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-add-task-1')"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-partners">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-title">Partners</div>
+      </div>
+      <button class="icon-btn" onclick="goto('s-todo')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </button>
+    </div>
+    <div class="content" id="partners-content"></div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goto('s-todo')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-tasks-list')"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
+      <button class="nav-btn active" onclick="goto('s-partners')"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-add-task-1')"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-briefing">
+    <div class="top-bar">
+      <div style="flex:1">
+        <div class="page-title">Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="page-title">Briefing</div>
+          <div>
+            <div style="font-size:11px;color:#888">Door: Manager1</div>
+            <span class="readonly-badge">Read only</span>
+          </div>
+        </div>
+      </div>
+      <button class="icon-btn" onclick="goto('s-todo')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </button>
+    </div>
+    <div class="content">
+      <div class="briefing-section">
+        <div class="brief-label">Doel:</div>
+        <div class="brief-content">Maximale zichtbaarheid voor ZLM Tour sponsoren en deelnemende ploegen via social media, pers en video-content tijdens de etappes van 3–6 mei.</div>
+      </div>
+      <div class="briefing-section">
+        <div class="brief-label">Wat moet er opgeleverd worden:</div>
+        <div class="brief-columns">
+          <div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">Must have's:</div>
+            <ul class="must-list">
+              <li>Persbericht etappe 1</li>
+              <li>Social posts per dag</li>
+              <li>Fotoverslag etappes</li>
+              <li>Interviews topsporters</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">Nice to have:</div>
+            <ul class="nice-list">
+              <li>Behind-the-scenes video</li>
+              <li>Partner shoutouts</li>
+              <li>Drone footage</li>
+              <li>Recap reel</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="briefing-section">
+        <div class="brief-label">Toon &amp; stijl:</div>
+        <div class="brief-content">Professioneel, sportief en enthousiast. ZLM-huisstijl hanteren.</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goto('s-todo')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-tasks-list')"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-partners')"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+      <button class="nav-btn" onclick="goto('s-add-task-1')"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-add-task-1">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-title">Taak aanmaken</div>
+      </div>
+      <button class="icon-btn" onclick="goto('s-todo')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </button>
+    </div>
+    <div class="content">
+      <div class="step-indicator">Stap 1 van 2</div>
+      <div class="form-group">
+        <label class="form-label">Titel</label>
+        <input class="form-input" id="new-task-title" placeholder="Naam van de taak..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Beschrijving</label>
+        <textarea class="form-textarea" id="new-task-desc" placeholder="Beschrijf de taak..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags</label>
+        <div class="tags-grid">
+          <div>
+            <div style="font-size:12px;color:#888;margin-bottom:4px">Categorie</div>
+            <div class="radio-row" onclick="selCat('Social media')"><div class="radio-circle" id="cat-social"></div><span class="radio-label">Social media</span></div>
+            <div class="radio-row" onclick="selCat('Vormgeving')"><div class="radio-circle" id="cat-vorm"></div><span class="radio-label">Vormgeving</span></div>
+            <div class="radio-row" onclick="selCat('Post')"><div class="radio-circle" id="cat-post"></div><span class="radio-label">Post</span></div>
+            <div class="radio-row" onclick="selCat('Meeting')"><div class="radio-circle" id="cat-meeting"></div><span class="radio-label">Meeting</span></div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:#888;margin-bottom:4px">Partners</div>
+            <div class="radio-row" onclick="selPartner('ZLM')"><div class="radio-circle" id="p-zlm"></div><span class="radio-label">ZLM</span></div>
+            <div class="radio-row" onclick="selPartner('RTL/Videoland')"><div class="radio-circle" id="p-rtl"></div><span class="radio-label">RTL/Videoland</span></div>
+            <div class="radio-row" onclick="selPartner('Gemeente')"><div class="radio-circle" id="p-gem"></div><span class="radio-label">Gemeente</span></div>
+            <div class="radio-row" onclick="selPartner('Sponsor')"><div class="radio-circle" id="p-spon"></div><span class="radio-label">Sponsor</span></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="goToStep2()">Next</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-add-task-2">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Taak aanmaken</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="step-indicator">Stap 2 van 2</div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:15px">Aan welk teamlid wil je deze taak toeschrijven?</label>
+      </div>
+      <div class="form-group">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Team</div>
+        <div style="font-size:13px;color:#888;margin-bottom:6px">Teamleden:</div>
+        <div class="radio-row" onclick="selMember('Luke')"><div class="radio-circle" id="m-luke"></div><span class="radio-label">Luke</span></div>
+        <div class="radio-row" onclick="selMember('Emma')"><div class="radio-circle" id="m-emma"></div><span class="radio-label">Emma</span></div>
+        <div class="radio-row" onclick="selMember('Daan')"><div class="radio-circle" id="m-daan"></div><span class="radio-label">Daan</span></div>
+        <div class="radio-row" onclick="selMember('Sophie')"><div class="radio-circle" id="m-sophie"></div><span class="radio-label">Sophie</span></div>
+      </div>
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">Deadline</label>
+        <input class="form-input" id="new-task-deadline" type="date" />
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn-primary" style="flex:1" onclick="goto('s-add-task-1')">Terug</button>
+        <button class="btn-primary dark" style="flex:1" onclick="addTask()">Add task</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+var currentUser = 'Luke';
+var selectedTask = 0;
+var newTask = { title:'', desc:'', cat:'', partner:'', member:'', deadline:'' };
+
+var tasks = [
+  {
+    id:0, title:'Persbericht', deadline:'Urgent', done:false,
+    partner:'ZLM', cat:'Wielrennen', deadlineDate:'5 mei',
+    subtasks:[
+      {text:'Bekend making deelnemende ploegen, nadruk op World tour teams', done:false},
+      {text:'Samenwerking met RTL/Videoland', done:false},
+      {text:'Korte toelichting op de etappes', done:false},
+      {text:'Quotes van John van den akker/Eelco Frankaert, ZLM verzekeringen en gemeentes', done:false}
+    ]
+  },
+  {
+    id:1, title:'Social media post', deadline:'5 mei', done:false,
+    partner:'RTL/Videoland', cat:'Social media', deadlineDate:'5 mei',
+    subtasks:[
+      {text:'Instagram story etappe start', done:false},
+      {text:'LinkedIn update sponsoren', done:false},
+      {text:'Twitter live updates', done:false}
+    ]
+  }
+];
+
+var partners = [
+  { name:'ZLM Verzekeringen', wat:'Hoofdsponsor wielerevenement', leveren:'Logo op alle uitingen, quotes directie', belangrijk:'Altijd volledige merknaam gebruiken' },
+  { name:'RTL/Videoland', wat:'Mediapartner & livestream', leveren:'Opnames en uitzendrechten', belangrijk:'Exclusiviteitsafspraken respecteren' },
+  { name:'Gemeente Zeeland', wat:'Lokale overheidspartner', leveren:'Vergunningen en locatie-support', belangrijk:'Burgemeester beschikbaar voor quote' }
+];
+
+function goto(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='s-todo') renderTodo();
+  if(id==='s-tasks-list') renderTasksList();
+  if(id==='s-partners') renderPartners();
+  if(id==='s-task-detail') renderDetail();
+  if(id==='s-task-edit') renderEdit();
+}
+
+function doLogin() {
+  var u = document.getElementById('login-user').value || 'Luke';
+  currentUser = u.charAt(0).toUpperCase() + u.slice(1);
+  goto('s-todo');
+}
+
+function renderTodo() {
+  var done = tasks.filter(t=>t.done).length;
+  var total = tasks.length;
+  var pct = total ? Math.round(done/total*100) : 0;
+  var html = '<div style="margin-bottom:10px">';
+  html += '<div style="font-size:18px;font-weight:700;margin-bottom:4px">Hi, '+currentUser+'!</div>';
+  html += '<div style="font-size:13px;color:#666;margin-bottom:8px">Dit zijn jouw taken voor vandaag:</div>';
+  html += '<div class="progress-bar-wrap"><div class="progress-bar" style="width:'+pct+'%"></div></div>';
+  html += '<div class="progress-text">'+done+' van '+total+' taken afgerond</div></div>';
+  tasks.forEach(function(t,i){
+    html += renderTaskCard(t, i, true);
+  });
+  document.getElementById('todo-content').innerHTML = html;
+}
+
+function renderTasksList() {
+  var html = '';
+  tasks.forEach(function(t,i){
+    html += renderTaskCard(t, i, true);
+  });
+  document.getElementById('tasks-list-content').innerHTML = html;
+}
+
+function renderTaskCard(t, i, showSeeMore) {
+  var doneClass = t.done ? 'done' : '';
+  var badge = t.done
+    ? '<span class="deadline-badge done-badge">Completed ✓</span>'
+    : '<span class="deadline-badge">Deadline: '+t.deadline+'</span>';
+  var checkClass = t.done ? 'check-circle done' : 'check-circle';
+  var html = '<div class="task-card"><div class="task-header">';
+  html += '<div class="task-title-row">';
+  html += '<div class="'+checkClass+'" onclick="toggleTask('+i+')"></div>';
+  html += '<span class="task-name '+doneClass+'">'+t.title+'</span>';
+  html += '</div>'+badge;
+  html += '<span class="edit-icon" onclick="openTask('+i+')">›</span>';
+  html += '</div>';
+  if(!t.done) {
+    html += '<div class="subtask-list">';
+    t.subtasks.slice(0,3).forEach(function(s,j){
+      html += '<div class="subtask-row" onclick="toggleSub('+i+','+j+')">';
+      html += '<div class="sub-circle'+(s.done?' done':'')+'"></div>';
+      html += '<span class="subtask-text'+(s.done?' done':'')+'">'+s.text+'</span></div>';
+    });
+    if(t.subtasks.length>3 && showSeeMore) html += '<div class="see-more" onclick="openTask('+i+')">See more</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function toggleTask(i) { tasks[i].done = !tasks[i].done; var cur = document.querySelector('.screen.active').id; goto(cur); }
+function toggleSub(i,j) { tasks[i].subtasks[j].done = !tasks[i].subtasks[j].done; var cur = document.querySelector('.screen.active').id; goto(cur); }
+
+function openTask(i) {
+  selectedTask = i;
+  goto('s-task-detail');
+}
+
+function renderDetail() {
+  var t = tasks[selectedTask];
+  document.getElementById('detail-title').textContent = t.title;
+  document.getElementById('detail-deadline').textContent = 'Deadline: '+t.deadline;
+  document.getElementById('detail-info').innerHTML =
+    '<p><strong>Partner:</strong> '+t.partner+'</p>'+
+    '<p><strong>Categorie:</strong> '+t.cat+'</p>'+
+    '<p><strong>Deadline:</strong> '+t.deadlineDate+'</p>';
+  var html = '';
+  t.subtasks.forEach(function(s,j){
+    html += '<div class="subtask-row" onclick="toggleSub('+selectedTask+','+j+');renderDetail()">';
+    html += '<div class="sub-circle'+(s.done?' done':'')+'"></div>';
+    html += '<span class="subtask-text'+(s.done?' done':'')+'">'+s.text+'</span></div>';
+  });
+  document.getElementById('detail-subtasks').innerHTML = html;
+}
+
+function renderEdit() {
+  var t = tasks[selectedTask];
+  document.getElementById('edit-title-head').textContent = t.title;
+  var html = '<div style="margin-bottom:10px;font-size:13px;color:#666">Klik op ✏️ om een subtaak te bewerken:</div>';
+  t.subtasks.forEach(function(s,j){
+    html += '<div class="detail-sub-edit">';
+    html += '<span class="pencil-icon">✏️</span>';
+    html += '<input class="form-input" id="sub-edit-'+j+'" value="'+s.text+'" style="flex:1" />';
+    html += '</div>';
+  });
+  document.getElementById('edit-subtasks-content').innerHTML = html;
+}
+
+function saveEdit() {
+  var t = tasks[selectedTask];
+  t.subtasks.forEach(function(s,j){
+    var el = document.getElementById('sub-edit-'+j);
+    if(el) s.text = el.value;
+  });
+  goto('s-task-detail');
+}
+
+function renderPartners() {
+  var html = '';
+  partners.forEach(function(p){
+    html += '<div class="partner-card">';
+    html += '<div class="partner-header">'+p.name+'</div>';
+    html += '<div class="partner-body">';
+    html += '<div class="partner-field"><span>Wat doen ze?</span>'+p.wat+'</div>';
+    html += '<div class="partner-field"><span>Wat leveren ze?</span>'+p.leveren+'</div>';
+    html += '<div class="partner-field"><span>Wat is belangrijk voor ze?</span>'+p.belangrijk+'</div>';
+    html += '</div></div>';
+  });
+  document.getElementById('partners-content').innerHTML = html;
+}
+
+var selectedCat = '';
+var selectedPartner = '';
+var selectedMember = '';
+
+function selCat(c) {
+  selectedCat = c;
+  ['social','vorm','post','meeting'].forEach(function(x){ document.getElementById('cat-'+x).classList.remove('selected'); });
+  var map = {'Social media':'social','Vormgeving':'vorm','Post':'post','Meeting':'meeting'};
+  if(map[c]) document.getElementById('cat-'+map[c]).classList.add('selected');
+}
+function selPartner(p) {
+  selectedPartner = p;
+  ['zlm','rtl','gem','spon'].forEach(function(x){ document.getElementById('p-'+x).classList.remove('selected'); });
+  var map = {'ZLM':'zlm','RTL/Videoland':'rtl','Gemeente':'gem','Sponsor':'spon'};
+  if(map[p]) document.getElementById('p-'+map[p]).classList.add('selected');
+}
+function selMember(m) {
+  selectedMember = m;
+  ['luke','emma','daan','sophie'].forEach(function(x){ document.getElementById('m-'+x).classList.remove('selected'); });
+  var map = {'Luke':'luke','Emma':'emma','Daan':'daan','Sophie':'sophie'};
+  if(map[m]) document.getElementById('m-'+map[m]).classList.add('selected');
+}
+function goToStep2() {
+  var t = document.getElementById('new-task-title').value;
+  if(!t.trim()) { alert('Vul een titel in!'); return; }
+  newTask.title = t;
+  newTask.desc = document.getElementById('new-task-desc').value;
+  newTask.cat = selectedCat;
+  newTask.partner = selectedPartner;
+  goto('s-add-task-2');
+}
+function addTask() {
+  var dl = document.getElementById('new-task-deadline').value;
+  tasks.push({
+    id: tasks.length, title: newTask.title, deadline: dl||'Geen deadline',
+    done:false, partner: newTask.partner||'–', cat: newTask.cat||'–', deadlineDate: dl||'–',
+    subtasks: [{text: newTask.desc||'Geen beschrijving', done:false}]
+  });
+  selectedCat=''; selectedPartner=''; selectedMember='';
+  document.getElementById('new-task-title').value='';
+  document.getElementById('new-task-desc').value='';
+  goto('s-todo');
+}
+
+renderTodo();
+renderPartners();
+</script>
